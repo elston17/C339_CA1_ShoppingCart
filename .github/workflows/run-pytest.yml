@@ -1,0 +1,45 @@
+name: Run pytest
+
+on:
+  # Run when code is pushed to main, but only if a file that can change the test result changed
+  push:
+    branches:
+      - main
+    paths:
+      - "**.py"
+      - "pytest.ini"
+      - ".github/workflows/run-pytest.yml"
+  # Run when a pull request into main changes the same kinds of files
+  pull_request:
+    branches:
+      - main
+    paths:
+      - "**.py"
+      - "pytest.ini"
+      - ".github/workflows/run-pytest.yml"
+  # Adds a "Run workflow" button in the Actions tab for running it manually
+  workflow_dispatch:
+
+# If a newer push arrives while an older run is still going, cancel the older run
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install pytest and pytest-cov
+        run: pip install pytest pytest-cov
+
+      - name: Run pytest with coverage
+        run: python -m pytest -v --cov=cart_total --cov=cart_delivery --cov-report=term-missing
